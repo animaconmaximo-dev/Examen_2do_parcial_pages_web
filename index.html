@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Colección de Personajes - Local</title>
+    <!-- Tailwind CSS para un diseño moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente elegante Google Fonts (Cinzel) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        .font-elegant {
+            font-family: 'Cinzel', serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Título principal con tipografía elegante -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-100 mb-2 tracking-wider font-elegant drop-shadow-lg">
+                Colección de Personajes
+            </h1>
+            <p class="text-slate-400 italic">Administra tu universo de personajes favoritos</p>
+        </header>
+
+        <!-- Barra de Acciones: Buscador, Filtro de Categoría, Botón Restaurar y Botón de Agregar -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div class="flex flex-col sm:flex-row gap-2 w-full md:w-2/3">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Buscar personaje..." 
+                    class="w-full sm:w-1/2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 focus:outline-none focus:border-slate-500 text-white placeholder-slate-500"
+                >
+                <select 
+                    id="categoryFilter" 
+                    onchange="filterCharacters()"
+                    class="w-full sm:w-1/2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 focus:outline-none focus:border-slate-500 text-slate-300 cursor-pointer"
+                >
+                    <option value="">Todas las categorías</option>
+                </select>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <button 
+                    onclick="restoreCharacters()" 
+                    class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2 rounded-lg transition duration-200 shadow cursor-pointer border border-slate-700"
+                >
+                    Restaurar
+                </button>
+                <button 
+                    onclick="openModal()" 
+                    class="w-full sm:w-auto bg-slate-200 hover:bg-white text-slate-950 font-bold px-6 py-2 rounded-lg transition duration-200 shadow cursor-pointer"
+                >
+                    + Agregar Personaje
+                </button>
+            </div>
+        </div>
+
+        <!-- Cuadrícula de Personajes -->
+        <div id="characterGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Las tarjetas se insertarán dinámicamente con JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal para Agregar / Editar -->
+    <div id="characterModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <h2 id="modalTitle" class="text-2xl font-bold text-slate-100 mb-4 font-elegant">Nuevo Personaje</h2>
+            <form id="characterForm" onsubmit="saveCharacter(event)">
+                <input type="hidden" id="charId">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1 text-slate-300">Nombre</label>
+                    <input type="text" id="charName" required class="w-full px-3 py-2 rounded bg-slate-950 border border-slate-800 focus:outline-none focus:border-slate-500 text-white">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1 text-slate-300">Rol / Categoría</label>
+                    <input type="text" id="charRole" required class="w-full px-3 py-2 rounded bg-slate-950 border border-slate-800 focus:outline-none focus:border-slate-500 text-white" placeholder="Ej. Modelos 3D">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1 text-slate-300">Ruta de la Imagen (Carpeta local)</label>
+                    <input type="text" id="charImage" required class="w-full px-3 py-2 rounded bg-slate-950 border border-slate-800 focus:outline-none focus:border-slate-500 text-white" placeholder="Imagenes/nombre.png">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-1 text-slate-300">Descripción</label>
+                    <textarea id="charDesc" rows="3" required class="w-full px-3 py-2 rounded bg-slate-950 border border-slate-800 focus:outline-none focus:border-slate-500 text-white"></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 font-medium cursor-pointer text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded bg-slate-200 hover:bg-white text-slate-950 font-bold cursor-pointer">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles -->
+    <div id="detailModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 px-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-lg shadow-2xl relative">
+            <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+            <div id="detailContent">
+                <!-- Contenido de detalles dinámico -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica de JavaScript integrada -->
+    <script>
+        let characters = JSON.parse(localStorage.getItem('characters')) || [
+            {
+                id: 1,
+                name: "Link",
+                role: "The Legend of Zelda",
+                image: "Imagenes/Link.png",
+                description: "El valiente espadachín elegido para portar la Espada Maestra y proteger el reino de Hyrule."
+            },
+            {
+                id: 2,
+                name: "Princesa Zelda",
+                role: "The Legend of Zelda",
+                image: "Imagenes/zelda.jpg",
+                description: "Princesa de Hyrule poseedora de la sabiduría sagrada y un profundo vínculo con la Diosa Hylia."
+            },
+            {
+                id: 3,
+                name: "Ganondorf",
+                role: "The Legend of Zelda",
+                image: "Imagenes/ganondorf.jpg",
+                description: "El señor del mal y portador de la Trifuerza del Poder, encarnación de la calamidad."
+            },
+            {
+                id: 4,
+                name: "Mipha",
+                role: "The Legend of Zelda",
+                image: "Imagenes/mipha.png",
+                description: "Princesa de los Zora y hábil sanadora, capaz de otorgar su gracia protectora."
+            },
+            {
+                id: 5,
+                name: "Mario",
+                role: "Super Mario",
+                image: "Imagenes/mario.jpg",
+                description: "Valiente fontanero que salta sin descanso para rescatar a la Princesa Peach."
+            },
+            {
+                id: 6,
+                name: "Luigi",
+                role: "Super Mario",
+                image: "Imagenes/luigi.jpg",
+                description: "El hermano menor de Mario, un poco más tímido pero capaz de grandes heroísmos."
+            },
+            {
+                id: 7,
+                name: "Princesa Peach",
+                role: "Super Mario",
+                image: "Imagenes/peach.png",
+                description: "Soberana del Reino Champiñón, elegante, bondadosa y querida por todos sus súbditos."
+            },
+            {
+                id: 8,
+                name: "Bowser",
+                role: "Super Mario",
+                image: "Imagenes/bowser.jpg",
+                description: "Rey de los Koopas y archienemigo de Mario, decidido a conquistar el Mushroom Kingdom."
+            },
+            {
+                id: 9,
+                name: "Leon S. Kennedy",
+                role: "Resident Evil",
+                image: "Imagenes/leon.jpg",
+                description: "Experto agente federal y superviviente del desastre de Raccoon City."
+            },
+            {
+                id: 10,
+                name: "Jill Valentine",
+                role: "Resident Evil",
+                image: "Imagenes/jil.jpg",
+                description: "Exmiembro de S.T.A.R.S. y destacada operativa en la lucha contra Umbrella Corporation."
+            },
+            {
+                id: 11,
+                name: "Claire Redfield",
+                role: "Resident Evil",
+                image: "Imagenes/clair.jpg",
+                description: "Defensora de los derechos humanos y valiente superviviente en múltiples brotes virales."
+            },
+            {
+                id: 12,
+                name: "Albert Wesker",
+                role: "Resident Evil",
+                image: "Imagenes/wesker.png",
+                description: "Genio científico y estratega calculador, exlíder de S.T.A.R.S. corrompido por ambición."
+            },
+            {
+                id: 13,
+                name: "Navi 3D",
+                role: "Modelos 3D",
+                image: "Imagenes/Navi.png",
+                description: "Modelo 3D realizado por Máximo, detallando a la fiel hada guía de Link con un brillo esférico etéreo y efectos de luz luminiscentes."
+            },
+            {
+                id: 14,
+                name: "Escudo Hyliano 3D",
+                role: "Modelos 3D",
+                image: "Imagenes/Escudo_hyliano.png",
+                description: "Modelo 3D realizado por Máximo, que recrea con precisión metálica y relieves esculpidos el icónico escudo defensivo de Hyrule."
+            },
+            {
+                id: 15,
+                name: "Máscara de Deku 3D",
+                role: "Modelos 3D",
+                image: "Imagenes/Mascara_deku.PNG",
+                description: "Modelo 3D realizado por Máximo, capturando los rasgos de madera tallada y la mística expresión de la transformación Deku."
+            },
+            {
+                id: 16,
+                name: "Espada Maestra 3D",
+                role: "Modelos 3D",
+                image: "Imagenes/Espada_maestra.png",
+                description: "Modelo 3D realizado por Máximo, enfocado en las texturas de la hoja sagrada y la empuñadura alada que repele el mal."
+            }
+        ];
+
+        function saveToLocalStorage() {
+            localStorage.setItem('characters', JSON.stringify(characters));
+        }
+
+        function updateCategoryDropdown() {
+            const select = document.getElementById('categoryFilter');
+            const currentValue = select.value;
+            const roles = [...new Set(characters.map(c => c.role))];
+
+            select.innerHTML = `<option value="">Todas las categorías</option>`;
+            roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role;
+                option.textContent = role;
+                if (role === currentValue) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+
+        function filterCharacters() {
+            renderCharacters();
+        }
+
+        function getBadgeStyle(role) {
+            if (role.includes("Zelda")) return "bg-emerald-950 text-emerald-400 border border-emerald-800";
+            if (role.includes("Mario")) return "bg-red-950 text-red-400 border border-red-800";
+            if (role.includes("Resident")) return "bg-sky-950 text-sky-400 border border-sky-800";
+            if (role.toLowerCase().includes("modelo") || role.toLowerCase().includes("3d")) return "bg-purple-950 text-purple-400 border border-purple-800";
+            return "bg-slate-800 text-slate-300 border border-slate-700";
+        }
+
+        function renderCharacters() {
+            const grid = document.getElementById('characterGrid');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const categoryVal = document.getElementById('categoryFilter').value;
+            
+            grid.innerHTML = "";
+
+            const filtered = characters.filter(c => {
+                const matchesSearch = c.name.toLowerCase().includes(searchVal) || c.role.toLowerCase().includes(searchVal);
+                const matchesCategory = categoryVal === "" || c.role === categoryVal;
+                return matchesSearch && matchesCategory;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-slate-500 py-8">No se encontraron personajes.</p>`;
+                return;
+            }
+
+            filtered.forEach(char => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow hover:border-slate-600 transition duration-300 flex flex-col justify-between";
+                
+                const badgeClass = getBadgeStyle(char.role);
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Imagen con clic para ver en grande -->
+                        <img src="${char.image}" alt="${char.name}" class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition" onclick="viewDetail(${char.id})" title="Haz clic para ver imagen completa">
+                        <div class="p-4">
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass}">${char.role}</span>
+                            <h3 class="text-xl font-bold mt-2 text-slate-100 font-elegant">${char.name}</h3>
+                            <p class="text-slate-400 text-sm mt-1 line-clamp-2">${char.description}</p>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0 flex gap-2">
+                        <button onclick="viewDetail(${char.id})" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm py-1.5 rounded font-medium transition cursor-pointer">Ver más</button>
+                        <button onclick="editCharacter(${char.id})" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-1.5 rounded font-medium transition cursor-pointer">Editar</button>
+                        <button onclick="deleteCharacter(${char.id})" class="bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 text-sm px-3 py-1.5 rounded font-medium transition cursor-pointer">Eliminar</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', () => {
+            renderCharacters();
+        });
+
+        function openModal(isEdit = false) {
+            document.getElementById('characterModal').classList.remove('hidden');
+            if (!isEdit) {
+                document.getElementById('modalTitle').innerText = "Nuevo Personaje";
+                document.getElementById('characterForm').reset();
+                document.getElementById('charId').value = "";
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('characterModal').classList.add('hidden');
+        }
+
+        function saveCharacter(e) {
+            e.preventDefault();
+            const id = document.getElementById('charId').value;
+            const name = document.getElementById('charName').value;
+            const role = document.getElementById('charRole').value;
+            const image = document.getElementById('charImage').value;
+            const description = document.getElementById('charDesc').value;
+
+            if (id) {
+                characters = characters.map(c => c.id == id ? { id: Number(id), name, role, image, description } : c);
+            } else {
+                const newChar = {
+                    id: Date.now(),
+                    name,
+                    role,
+                    image,
+                    description
+                };
+                characters.push(newChar);
+            }
+
+            saveToLocalStorage();
+            updateCategoryDropdown();
+            renderCharacters();
+            closeModal();
+        }
+
+        function editCharacter(id) {
+            const char = characters.find(c => c.id === id);
+            if (!char) return;
+
+            document.getElementById('charId').value = char.id;
+            document.getElementById('charName').value = char.name;
+            document.getElementById('charRole').value = char.role;
+            document.getElementById('charImage').value = char.image;
+            document.getElementById('charDesc').value = char.description;
+
+            document.getElementById('modalTitle').innerText = "Editar Personaje";
+            openModal(true);
+        }
+
+        function deleteCharacter(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este personaje?")) {
+                characters = characters.filter(c => c.id !== id);
+                saveToLocalStorage();
+                updateCategoryDropdown();
+                renderCharacters();
+            }
+        }
+
+        function restoreCharacters() {
+            if (confirm("¿Deseas restaurar los personajes originales predeterminados?")) {
+                characters = [
+                    {
+                        id: 1,
+                        name: "Link",
+                        role: "The Legend of Zelda",
+                        image: "Imagenes/Link.png",
+                        description: "El valiente espadachín elegido para portar la Espada Maestra y proteger el reino de Hyrule."
+                    },
+                    {
+                        id: 2,
+                        name: "Princesa Zelda",
+                        role: "The Legend of Zelda",
+                        image: "Imagenes/zelda.jpg",
+                        description: "Princesa de Hyrule poseedora de la sabiduría sagrada y un profundo vínculo con la Diosa Hylia."
+                    },
+                    {
+                        id: 3,
+                        name: "Ganondorf",
+                        role: "The Legend of Zelda",
+                        image: "Imagenes/ganondorf.jpg",
+                        description: "El señor del mal y portador de la Trifuerza del Poder, encarnación de la calamidad."
+                    },
+                    {
+                        id: 4,
+                        name: "Mipha",
+                        role: "The Legend of Zelda",
+                        image: "Imagenes/mipha.png",
+                        description: "Princesa de los Zora y hábil sanadora, capaz de otorgar su gracia protectora."
+                    },
+                    {
+                        id: 5,
+                        name: "Mario",
+                        role: "Super Mario",
+                        image: "Imagenes/mario.jpg",
+                        description: "Valiente fontanero que salta sin descanso para rescatar a la Princesa Peach."
+                    },
+                    {
+                        id: 6,
+                        name: "Luigi",
+                        role: "Super Mario",
+                        image: "Imagenes/luigi.jpg",
+                        description: "El hermano menor de Mario, un poco más tímido pero capaz de grandes heroísmos."
+                    },
+                    {
+                        id: 7,
+                        name: "Princesa Peach",
+                        role: "Super Mario",
+                        image: "Imagenes/peach.png",
+                        description: "Soberana del Reino Champiñón, elegante, bondadosa y querida por todos sus súbditos."
+                    },
+                    {
+                        id: 8,
+                        name: "Bowser",
+                        role: "Super Mario",
+                        image: "Imagenes/bowser.jpg",
+                        description: "Rey de los Koopas y archienemigo de Mario, decidido a conquistar el Mushroom Kingdom."
+                    },
+                    {
+                        id: 9,
+                        name: "Leon S. Kennedy",
+                        role: "Resident Evil",
+                        image: "Imagenes/leon.jpg",
+                        description: "Experto agente federal y superviviente del desastre de Raccoon City."
+                    },
+                    {
+                        id: 10,
+                        name: "Jill Valentine",
+                        role: "Resident Evil",
+                        image: "Imagenes/jil.jpg",
+                        description: "Exmiembro de S.T.A.R.S. y destacada operativa en la lucha contra Umbrella Corporation."
+                    },
+                    {
+                        id: 11,
+                        name: "Claire Redfield",
+                        role: "Resident Evil",
+                        image: "Imagenes/clair.jpg",
+                        description: "Defensora de los derechos humanos y valiente superviviente en múltiples brotes virales."
+                    },
+                    {
+                        id: 12,
+                        name: "Albert Wesker",
+                        role: "Resident Evil",
+                        image: "Imagenes/wesker.png",
+                        description: "Genio científico y estratega calculador, exlíder de S.T.A.R.S. corrompido por ambición."
+                    },
+                    {
+                        id: 13,
+                        name: "Navi 3D",
+                        role: "Modelos 3D",
+                        image: "Imagenes/Navi.png",
+                        description: "Modelo 3D realizado por Máximo, detallando a la fiel hada guía de Link con un brillo esférico etéreo y efectos de luz luminiscentes."
+                    },
+                    {
+                        id: 14,
+                        name: "Escudo Hyliano 3D",
+                        role: "Modelos 3D",
+                        image: "Imagenes/Escudo_hyliano.png",
+                        description: "Modelo 3D realizado por Máximo, que recrea con precisión metálica y relieves esculpidos el icónico escudo defensivo de Hyrule."
+                    },
+                    {
+                        id: 15,
+                        name: "Máscara de Deku 3D",
+                        role: "Modelos 3D",
+                        image: "Imagenes/Mascara_deku.PNG",
+                        description: "Modelo 3D realizado por Máximo, capturando los rasgos de madera tallada y la mística expresión de la transformación Deku."
+                    },
+                    {
+                        id: 16,
+                        name: "Espada Maestra 3D",
+                        role: "Modelos 3D",
+                        image: "Imagenes/Espada_maestra.png",
+                        description: "Modelo 3D realizado por Máximo, enfocado en las texturas de la hoja sagrada y la empuñadura alada que repele el mal."
+                    }
+                ];
+                saveToLocalStorage();
+                updateCategoryDropdown();
+                renderCharacters();
+            }
+        }
+
+        function viewDetail(id) {
+            const char = characters.find(c => c.id === id);
+            if (!char) return;
+
+            const badgeClass = getBadgeStyle(char.role);
+            const container = document.getElementById('detailContent');
+            container.innerHTML = `
+                <div class="text-center">
+                    <img src="${char.image}" alt="${char.name}" class="w-full max-h-80 object-contain rounded-lg mb-4 mx-auto">
+                    <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass}">${char.role}</span>
+                    <h2 class="text-2xl font-bold mt-2 text-slate-100 font-elegant">${char.name}</h2>
+                    <p class="text-slate-300 mt-3 leading-relaxed">${char.description}</p>
+                </div>
+            `;
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Inicializar categorías y renderizar al cargar
+        updateCategoryDropdown();
+        renderCharacters();
+    </script>
+</body>
+</html>
